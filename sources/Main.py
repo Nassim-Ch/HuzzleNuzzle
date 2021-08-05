@@ -1,7 +1,7 @@
 import network
 
 #Please change accordingly
-ssid = "ssid"
+ssid = "eduroam"
 password = "pw"
 
 wlan = network.WLAN(network.STA_IF)
