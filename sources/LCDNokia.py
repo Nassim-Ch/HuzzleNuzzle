@@ -8,7 +8,7 @@
 # Connections:
 #   [pcd8544:pico(physical pin)]
 #   Gnd: Pico GND (38)
-#   BL : Pico GP28(34)
+#   BL : Pico 3V3 (36)
 #   Vcc: Pico 3V3 (36)
 #   Clk: Pico GP6 ( 9)
 #   Din: Pico GP7 (10)
