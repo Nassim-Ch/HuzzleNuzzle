@@ -46,11 +46,14 @@ def setupExpanders():
     
     #mcp[7].value(0)
     #sleep(1)
+    print(mcp_1.gpio)
+  
+    mcp_2[8].output(1)  # GPA7
     
     
 # initialize cube
 def init():
-    connectInternet()
+  #  connectInternet()
     setupExpanders()
     #setNetVar("HuzzleNuzzle", "Test")
     
