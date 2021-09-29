@@ -2,7 +2,7 @@ from machine import Pin, I2C
 from time import sleep
 import mcp23017
 
-i2c = I2C(id=1, scl=Pin(15), sda=Pin(14))
+i2c = I2C(scl=Pin(14), sda=Pin(12))
 print(i2c.scan())
 mcp = mcp23017.MCP23017(i2c, 0x20)
 
