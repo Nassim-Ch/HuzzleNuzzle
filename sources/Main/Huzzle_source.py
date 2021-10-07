@@ -36,6 +36,7 @@ button = machine.ADC(0)
 import tcs34725
 i2c = I2C(scl=Pin(5), sda=Pin(4))
 rgb_sensor = tcs34725.TCS34725(i2c)
+rgb_sensor.active(False)
 #--------------------#
 
 #--- Intergrated LEDs ---#
@@ -45,8 +46,10 @@ display_light = Pin(12, Pin.OUT, value=1) # BL to D6 (12) # DISPLAY LIGHT
 while True:
     button_value = button.read_u16() / 65535
     if (button_value == 1):
+        rgb_sensor.active(True)
         print("pressed")
-        print(rgb_sensor.read())
+        print(rgb_sensor.read(True))
+        rgb_sensor.active(False)
         sleep(100)
 
 #--- METHODS ---#
