@@ -36,7 +36,7 @@ def setupExpanders():
     #i2c_3 = I2C(scl=Pin(0), sda=Pin(2))
     print("I2C_1: ", i2c_1.scan())
     mcp_1 = mcp23017.MCP23017(i2c_1, 0x20)
-    mcp_2 = mcp23017.MCP23017(i2c_1, 0x21)
+   # mcp_2 = mcp23017.MCP23017(i2c_1, 0x21)
     #mcp_3 = mcp23017.MCP23017(i2c_1, 0x22)
     
     #mcp_1[7].output()
@@ -45,11 +45,9 @@ def setupExpanders():
     #sleep(1)
     
     #mcp[7].value(0)
-    #sleep(1)
-    print(mcp_1.gpio)
-  
-    mcp_2[8].output(1)  # GPA7
-    
+    #sleep(1
+    mcp_1[9].output(1)  # GPA7: mcp_x[7].output(1), GPB0: mcp_x[8].output(1)
+   # mcp_1.porta.gpio = 0x40
     
 # initialize cube
 def init():
