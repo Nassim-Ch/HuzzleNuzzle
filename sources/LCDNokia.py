@@ -20,12 +20,12 @@ import pcd8544_fb
 from machine import Pin, SPI
 import utime
 
-spi = SPI(0)
+spi = SPI(1)
 spi.init(baudrate=2000000, polarity=0, phase=0)
 print(spi)
-cs = Pin(5)
-dc = Pin(4)
-rst = Pin(8)
+cs = Pin(2)
+dc = Pin(15)
+rst = Pin(0)
 
 lcd = pcd8544_fb.PCD8544_FB(spi, cs, dc, rst)
 
