@@ -9,6 +9,7 @@ from machine import Pin, SPI, I2C
 import utime
 from time import sleep
 import urandom
+import time
 #--------------------#
 
 #--- For LCD-Screen ---#
@@ -48,10 +49,12 @@ bl_state = False
 #--------------------#
 
 current_game_state = " "
-played_stoerungen = tuple()
+played_stoerungen = []
+played_colorgames = []
 color_tolerance = 70
 rgb_text = ["R ", "G ", "B "]
 game_text = ["G1", "G2"]
+countdown_time = 10
         
 #--- METHODS ---#
 def connectInternet():
@@ -121,11 +124,14 @@ def is_same_color(scan_c, selected_c):
     else: is_same = True
     
     return is_same
-        
+
+#--- Networking Methods >>
+def sendToNet(message):
+    setNetVar("0huzzle", str(message))
 
 #--- Color Game Method >>
 def color_game(num_game):
-    setNetVar("0huzzle", num_game)
+    sendToNet(num_game)
     current_game_state = num_game
     random_RGB = get_random_color()
     print("Search for color: ", random_RGB)
@@ -141,7 +147,7 @@ def color_game(num_game):
         if (button_value == 1):
             scanned_color = get_scanned_color()
             if is_same_color(scanned_color, random_RGB):
-                setNetVar("0huzzle", "right")
+                sendToNet("right")
                 print("Right color")
                 clearScreen()
                 printText("Task",0,0)
@@ -158,10 +164,165 @@ def color_game(num_game):
                     printText(str(scanned_color[i]),54,18+(i*9))
 
 #--- Störungen Game Method >>>
+def get_rand_s():
+    rand_stoerung = urandom.getrandbits(2)
+    
+    while rand_stoerung in played_stoerungen:
+        rand_stoerung = urandom.getrandbits(2)
+    return rand_stoerung
+
+def draw_timeline(prev_time, elapsed_time):
+    if time.time()-prev_time >= 1:
+        prev_time = time.time()
+        framebuf.fill_rect(0,43,8*elapsed_time,5,1)
+        lcd.data(buffer)
+        elapsed_time+=1
+    return prev_time, elapsed_time
+    
+def stoer_1_colorgame(): # TODO: implement timer and ticking
+    random_RGB = get_random_color()
+    print("Search for color: ", random_RGB)
+    scanned_color = 0
+    clearScreen()
+    printText("Find color!",0,0)
+    prev_time = 0
+    elapsed_time = 0
+    
+    for i in range(3):
+        printText(rgb_text[i] + str(random_RGB[i]),0,18+(i*9))
+    while True:
+        button_value = button.read_u16() / 65535
+        if (button_value == 1):
+            scanned_color = get_scanned_color()
+            if is_same_color(scanned_color, random_RGB):
+                print("Right color")
+                clearScreen()
+                printText("System",0,0)
+                printText("stable",0,9)
+                screenBlink(3,1)
+                return
+            else:
+                if elapsed_time >= countdown_time:
+                  random_RGB = get_random_color()
+                  elapsed_time = 0
+                clearScreen()
+                prev_time, elapsed_time = draw_timeline(prev_time, elapsed_time)
+                printText("Try again",0,0)
+                for i in range(3):
+                    printText(rgb_text[i] + str(random_RGB[i]),0,18+(i*9))
+                    printText(str(scanned_color[i]),54,18+(i*9))
+    
+    
+def play_stoerung_1(): # Hackerkonsole fällt aus
+    clearScreen()
+    current_game_state = "S1"
+    sendToNet("S1")
+    while current_game_state is "S1":
+        printText("Error 401",0,0)
+        printText("4x00932",0,9)
+        printText("waiting...",0,18)
+        screenBlink(3,1)
+        
+        if getNetVar("0nuzzle") is "SOS":
+            clearScreen()
+            stoer_1_colorgame()
+            sendToNet("rightS1")
+            sleep(30)
+            sendToNet("G" + len(played_colorgames)) 
+            return
+    return
+
+def blink_display_morse(morsecode):
+    for x in morsecode:
+        screenBlink(x, 0.5)
+    sleep(1)
+    
+def play_stoerung_2(): # Würfel von Agent fällt aus
+    clearScreen()
+    current_game_state = "S2"
+    sendToNet("S2")
+    morsecode = (1,5,1,3)
+    
+    while current_game_state is "S2":
+        printText("System",0,0)
+        printText("Shutdown",0,9)
+        printText("Call admin",0,27)
+        blink_display_morse(morsecode)
+        
+        if getNetVar("0nuzzle") is "rightS2":
+            clearScreen()
+            printText("Reboot",0,0)
+            screenBlink(3,1)
+            sleep(3)
+            return
+    return
+
+def play_stoerung_3(): # Verbindungsabbruch
+    clearScreen()
+    current_game_state = "S3"
+    sendToNet("S3")
+    
+    while current_game_state is "S3":
+    return
+
+def scan_light():
+    while True:
+        button_value = button.read_u16() / 65535 
+        if (button_value == 1):
+            if rgb_sensor.read(False)[0] >= 4000:
+                print("Enough energy")
+                clearScreen()
+                printText("Admin",0,0)
+                printText("reconnected",0,9)
+                screenBlink(3,1)
+                return
+            else:
+                printText("Try again!",0,44)
+                screenBlink(2,0.2)
+    
+def play_stoerung_4(): # Stromausfall
+    clearScreen()
+    current_game_state = "S4"
+    sendToNet("S4")
+    
+    while current_game_state is "S4":
+        printText("Error",0,0)
+        printText("010000010101001",0,9)
+        printText("Wait for",0,27)
+        printText("response",0,36)
+        
+        if getNetVar("0nuzzle") is "SOS":
+            clearScreen()
+            printText("Admin",0,0)
+            printText("pwr loss",0,9)
+            printText("Send pwr!",0,27)
+            scan_light()
+            sendToNet("rightS4")
+            return
+    return
+
 def choose_stoerung():
     # random number > check if played before > if yes = roll again // if no = methodenaufruf
-    return
-                    
+    # make random number <2
+    rand_stoerung = get_rand_s()
+    
+    # check if already played
+    if rand_stoerung not in played_stoerungen:
+        sendToNet("S" + str(rand_stoerung))
+        if rand_stoerung == 0:
+            play_stoerung_1()
+        elif rand_stoerung == 1:
+            play_stoerung_2()
+        elif rand_stoerung == 2:
+            play_stoerung_3()
+        elif rand_stoerung == 3:
+            play_stoerung_4()
+        played_stoerungen.append(rand_stoerung)
+        return
+    else:
+        print("Cannot find right Stoerung...")
+     
+
 #--- Finish Game Method >>>
 def finishGame():
     clearScreen()
@@ -174,7 +335,7 @@ def finishGame():
 def main():
     print("Starting Game")
     screenLight(True)
-    setNetVar("0huzzle", "ready")
+    sendToNet("ready")
     
     waitVal = True
     while waitVal:
@@ -194,12 +355,12 @@ def main():
     color_game("G1")
     print("Next Game!")
     
-    #--- Störungen ---#
+    #--- Störung 1 ---#
     nuzzle = getNetVar("0nuzzle")
     if "right" in nuzzle:
         if "G3" in nuzzle:
             finishGame()
-            setNetVars("0huzzle", "finish")
+            sendToNet("finish")
             return
         if any(x in nuzzle for x in game_text):
             choose_stoerung()
@@ -208,7 +369,7 @@ def main():
         
     
 def start():
-    setNetVar("0huzzle", "offline")
+    sendToNet("offline")
     while True:
         value = button.read_u16()
         value =  value // 65535
@@ -231,6 +392,6 @@ def start():
             value =  value // 65535
 
 init()
-setNetVar("0huzzle", "offline")
+sendToNet("offline")
 start()
 
