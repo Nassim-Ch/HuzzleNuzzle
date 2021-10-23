@@ -6,7 +6,6 @@
 
 #--- For all ---#
 from machine import Pin, SPI, I2C
-import machine
 import utime
 from time import sleep
 import urandom
@@ -38,10 +37,10 @@ counter = 0
 
 #--- For RGB-Sensor ---#
 import tcs34725
-i2c = I2C(scl=Pin(5), sda=Pin(4)) # SCL(Orange) = D1 / SDA(Grün) = D2
+i2c = I2C(scl=Pin(5), sda=Pin(4))
 rgb_sensor = tcs34725.TCS34725(i2c)
+rgb_sensor.active(False)
 rgb_power = Pin(16,Pin.OUT, value=1)
-rgb_sensor.gain(4)
 #--------------------#
 
 #--- Intergrated LEDs ---#
@@ -52,23 +51,63 @@ bl_state = False
 current_game_state = " "
 played_stoerungen = []
 played_colorgames = []
-color_tolerance = 50
+color_tolerance = 70
 rgb_text = ["R ", "G ", "B "]
 game_text = ["G1", "G2"]
 countdown_time = 10
 
+#--- pictures ---#
+party_f1 = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+[0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,1,0],
+[0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,1,0,0,0],
+[0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0],
+[0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0],
+[0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0],
+[0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0],
+[0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0],
+[0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0],
+[0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0,0],
+[0,0,1,0,0,1,0,0,0,1,1,0,0,0,0,0,1,0,1,0],
+[0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0],
+[0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
+party_f2 = [
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,1,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0],
+[0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,0,1,0,0,0],
+[0,0,0,1,1,0,0,0,1,1,0,0,1,1,0,0,0,1,0,0],
+[0,0,1,0,0,1,0,0,1,1,0,0,1,1,0,0,1,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0],
+[0,0,0,0,1,1,1,1,0,0,0,0,0,0,1,1,1,1,0,0],
+[0,0,0,0,1,1,1,1,0,0,0,0,0,0,1,1,1,1,0,0],
+[0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[0,0,0,0,1,1,1,1,0,0,0,0,0,0,1,1,1,1,0,0],
+[0,0,0,0,1,1,1,1,0,0,0,0,0,0,1,1,1,1,0,0],
+[0,0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,1,0,0],
+[0,0,0,1,1,0,0,0,1,1,0,0,1,1,0,0,1,0,1,0],
+[0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,0,0,1,0,0],
+[0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
 
 #--- METHODS ---#
 def connectInternet():
     # Enter Internet information here
-    ssid = "ItHurtsWhenIP"
-    password = "76446490372798877824"
     #ssid = "600cc"
     #password = "6795@2697@18803"
-    #ssid = "HCUM_Lab"
-    #password = "lAb"
+    ssid = "AndroidAP"
+    password = "nana6795"
     
-    initNet(ssid,password)
+    initNet(ssid, password)
 
 #--- Screen Effects __   
 def clearScreen():
@@ -103,14 +142,13 @@ def init():
 #-- Waiting -->
 def waitingForPlayer():
     clearScreen()
-    #print("Player offline")
+    print("Player offline")
     printText("Waiting", 0,0)
     printText("for admin", 0, 9)
 
 #-- Color Methods -->
 def get_scanned_color():
-    r,g,b,c = rgb_sensor.read(True)
-    logged_color = (int(r/1024*256),int(g/1024*256),int(b/1024*256))
+    logged_color = tcs34725.html_rgb(rgb_sensor.read(True))
     print("Read color: ", logged_color)
     return logged_color
 
@@ -142,7 +180,7 @@ def color_game(num_game):
     sendToNet(num_game)
     current_game_state = num_game
     random_RGB = get_random_color()
-    #print("Search for color: ", random_RGB)
+    print("Search for color: ", random_RGB)
     scanned_color = 0
     clearScreen()
     printText("Find color",0,0)
@@ -152,14 +190,11 @@ def color_game(num_game):
     
     while True:
         button_value = button.read_u16() / 65535
-        if "rightG" in getNetVar("0nuzzle"):
-            return
-        
         if (button_value == 1):
             scanned_color = get_scanned_color()
             if is_same_color(scanned_color, random_RGB):
                 sendToNet("right")
-                #print("Right color")
+                print("Right color")
                 clearScreen()
                 printText("Task",0,0)
                 printText("success-",0,9)
@@ -167,14 +202,13 @@ def color_game(num_game):
                 printText("completed!",0,27)
                 screenBlink(3,1)
                 played_colorgames.append(num_game)
-                #return
+                return
             else:
                 clearScreen()
                 printText("Try again",0,0)
                 for i in range(3):
                     printText(rgb_text[i] + str(random_RGB[i]),0,18+(i*9))
                     printText(str(scanned_color[i]),54,18+(i*9))
-                    
 
 #--- Störungen Game Method >>>
 def get_rand_s():
@@ -205,36 +239,26 @@ def stoer_1_colorgame(): # TODO: implement timer and ticking
         printText(rgb_text[i] + str(random_RGB[i]),0,18+(i*9))
     while True:
         button_value = button.read_u16() / 65535
-        if elapsed_time >= countdown_time:
-            random_RGB = get_random_color()
-            elapsed_time = 0
-        clearScreen()
-                
         if (button_value == 1):
             scanned_color = get_scanned_color()
             if is_same_color(scanned_color, random_RGB):
-                #print("Right color")
-                #clearScreen()
+                print("Right color")
+                clearScreen()
                 printText("System",0,0)
                 printText("stable",0,9)
                 screenBlink(3,1)
                 return
             else:
-                #prev_time, elapsed_time = draw_timeline(prev_time, elapsed_time)
-
-                #if elapsed_time >= countdown_time:
-                  #random_RGB = get_random_color()
-                  #elapsed_time = 0
-                
-                #clearScreen()
-                #prev_time, elapsed_time = draw_timeline(prev_time, elapsed_time)
+                if elapsed_time >= countdown_time:
+                  random_RGB = get_random_color()
+                  elapsed_time = 0
+                clearScreen()
+                prev_time, elapsed_time = draw_timeline(prev_time, elapsed_time)
                 printText("Try again",0,0)
                 for i in range(3):
                     printText(rgb_text[i] + str(random_RGB[i]),0,18+(i*9))
                     printText(str(scanned_color[i]),54,18+(i*9))
-            
-        prev_time, elapsed_time = draw_timeline(prev_time, elapsed_time)
-
+    
     
 def play_stoerung_1(): # Hackerkonsole fällt aus
     clearScreen()
@@ -250,18 +274,15 @@ def play_stoerung_1(): # Hackerkonsole fällt aus
             clearScreen()
             stoer_1_colorgame()
             sendToNet("rightS1")
-            sleep(10)
-            #sendToNet("G" + str(len(played_colorgames))) 
+            sleep(30)
+            sendToNet("G" + len(played_colorgames)) 
             return
     return
 
 def blink_display_morse(morsecode):
-    screenLight(False)
     for x in morsecode:
         screenBlink(x, 0.5)
-        screenLight(False)
-        sleep(1)
-    sleep(3)
+    sleep(1)
     
 def play_stoerung_2(): # Würfel von Agent fällt aus
     clearScreen()
@@ -273,15 +294,13 @@ def play_stoerung_2(): # Würfel von Agent fällt aus
         printText("System",0,0)
         printText("Shutdown",0,9)
         printText("Call admin",0,27)
-        
         blink_display_morse(morsecode)
         
         if getNetVar("0nuzzle") is "rightS2":
             clearScreen()
             printText("Reboot",0,0)
             screenBlink(3,1)
-            sendToNet("rightS2")
-            sleep(10)
+            sleep(3)
             return
     return
 
@@ -322,7 +341,7 @@ def play_stoerung_3(): # Verbindungsabbruch
         sleep(urandom.getrandbits(3)/10)
         
         nuzzle = getNetVar("0nuzzle")
-        if "rightS3" in nuzzle:
+        if "right" in nuzzle:
             clearScreen()
             printText("Establish", 0,0)
             printText("connection", 0,9)
@@ -336,9 +355,8 @@ def play_stoerung_3(): # Verbindungsabbruch
             printText("Success-", 0,0)
             printText("fully", 0,9)
             printText("connected!",0,18)
-            sendToNet("rightS3")
             screenBlink(3,1)
-            sleep(10)
+            sleep(3)
             return
         
     return
@@ -347,7 +365,7 @@ def scan_light():
     while True:
         button_value = button.read_u16() / 65535 
         if (button_value == 1):
-            if 5 <= rgb_sensor.read(False)[1] <= 200:
+            if rgb_sensor.read(False)[0] >= 4000:
                 print("Enough energy")
                 clearScreen()
                 printText("Admin",0,0)
@@ -355,7 +373,7 @@ def scan_light():
                 screenBlink(3,1)
                 return
             else:
-                printText("Try again!",0,35)
+                printText("Try again!",0,44)
                 screenBlink(2,0.2)
     
 def play_stoerung_4(): # Stromausfall
@@ -376,7 +394,6 @@ def play_stoerung_4(): # Stromausfall
             printText("Send pwr!",0,27)
             scan_light()
             sendToNet("rightS4")
-            sleep(10)
             return
     return
 
@@ -387,7 +404,7 @@ def choose_stoerung():
     
     # check if already played
     if rand_stoerung not in played_stoerungen:
-        sendToNet("S" + str(rand_stoerung+1))
+        sendToNet("S" + str(rand_stoerung))
         if rand_stoerung == 0:
             play_stoerung_1()
         elif rand_stoerung == 1:
@@ -401,15 +418,38 @@ def choose_stoerung():
     else:
         print("Cannot find right Stoerung...")
      
+
+#--- Finish Game Method >>>
+def display_party_anim(x_spawn,y_spawn):
+    framebuf.fill_rect(0,9,84,48,0)
+    lcd.data(buffer)
+    for i in range(2):
+        framebuf.fill_rect(0,9,84,48,0)
+        lcd.data(buffer)
+        for x in range(20):
+            for y in range(20):
+                if i == 0:
+                    if party_f1[x][y] == 1:
+                        framebuf.pixel(x+x_spawn,y+y_spawn,1)
+                elif i == 1:
+                    if party_f2[x][y] == 1:
+                        framebuf.pixel(x+x_spawn,y+y_spawn,1)
+        lcd.data(buffer)
+        sleep(0.5)
         
 def finishGame():
     clearScreen()
     printText("Congrats!", 0,0)
+    for i in range(10):
+        display_party_anim(0,10)
+        display_party_anim(22,10)
+        display_party_anim(44,10)
+    start()
     return
 
 # CODE RUN #
 def main():
-    #print("Starting Game")
+    print("Starting Game")
     screenLight(True)
     sendToNet("ready")
     
@@ -417,19 +457,19 @@ def main():
     while waitVal:
         nuzzle = getNetVar("0nuzzle")
         if nuzzle == "ready": # ready
-            #print("Player ready")
+            print("Player ready")
             waitVal = False
         else:
             waitingForPlayer()
             sleep(2)
         sleep(.5)
     clearScreen()
-    #print("Start")
+    print("Start")
     
     sleep(5)
     #--- First Color Game ---#
     color_game("G1")
-    print("Color Game 1 done!")
+    print("Next Game!")
     
     #--- Störung 1 ---#
     while True:
@@ -439,12 +479,11 @@ def main():
             if any(x in nuzzle for x in game_text):
                 choose_stoerung()
                 break
-    print("Störung 1 done!")
-    
+     
     #--- Second Color Game ---#
     color_game("G2")
-    #print("Next Game!")
-    print("Game 2 done!")
+    print("Next Game!")
+    
     #--- Störung 2 ---#
     while True:
         nuzzle = getNetVar("0nuzzle")
@@ -455,7 +494,7 @@ def main():
     #--- Störung 3 ---#
     while True:
         nuzzle = getNetVar("0nuzzle")
-        if "rightS" in nuzzle:
+        if any(x in nuzzle for x in game_text):
             choose_stoerung()
             break
     
@@ -463,7 +502,7 @@ def main():
     color_game("G3")
     
     #--- Finish ---#
-    #print("Finish Game!")
+    print("Finish Game!")
     finishGame()
     sleep(30)
     sendToNet("offline")
@@ -479,7 +518,7 @@ def start():
         counter_button = 0
         clearScreen()
         while value==1:
-            #print(counter_button)
+            print(counter_button)
             counter_button += 1
             screenBlink(1,0.2)
             clearScreen()
@@ -495,5 +534,5 @@ def start():
             value =  value // 65535
 
 init()
-#sendToNet("offline")
+sendToNet("offline")
 start()
